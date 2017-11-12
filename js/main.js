@@ -89,8 +89,7 @@ var getTileDimensions = function( width ){
               toY:{x:w, y:-h}
             }
 };
-function line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
-{
+function line_intersect(x1, y1, x2, y2, x3, y3, x4, y4){
     var ua, ub, denom = (y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1);
     if (denom == 0) {
         return null;
@@ -103,4 +102,58 @@ function line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
         seg1: ua >= 0 && ua <= 1,
         seg2: ub >= 0 && ub <= 1
     };
+};
+var svgContStrings = {
+  svgOpen:function(width=100,height=100){
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'">'
+  },
+  foreignObjectOpen:function(){
+    return '<foreignObject width="100%" height="100%">'
+  },
+  divOpen:function(style){
+    return '<div xmlns="http://www.w3.org/1999/xhtml"'+ (style ? ' style="'+style+'"' : '') +'>'
+  },
+  closers:function(){
+    return '</div></foreignObject></svg>'
+  },
+  DOMURL: window.URL || window.webkitURL || window,
+  loadCallback: function(domurl,url){
+    domurl.revokeObjectURL(url);
+  },
+  htmlToImg: function(ob,callback){
+    var img = new Image();
+    var c = svgContStrings;
+    var data = '' + c.svgOpen(ob.width||100, ob.height||100) + c.foreignObjectOpen() + c.divOpen(ob.contDivStyle) + ob.data + c.closers();
+    var svg = new Blob([data], {type: 'image/svg+xml'});
+    var url = svgContStrings.DOMURL.createObjectURL(svg);
+    var callbackHandler = {
+      DOMURL: c.DOMURL,
+      cbk2: c.loadCallback,
+      cbk1: callback,
+      img: img,
+      url:url
+    };
+    img.addEventListener("load",function(img){
+      var self = this;
+      self.cbk1(self.img);
+      self.cbk2(this.DOMURL, self.url);
+    }.bind( callbackHandler ));
+    img.src = url;
+  }
+
+};
+
+var testDOMtoCANVAS = function(){
+  svgContStrings.htmlToImg(
+    {   width:200,
+        height:200,
+        contDivStyle:"font-size:1em",
+        data: '<span>OKAY C\'EST BON</span>'
+    },
+    function(img){
+      var cv = document.getElementById("renderCanvas"),
+      ctx = cv.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+    }
+  );
 };
