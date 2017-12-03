@@ -22,3 +22,9 @@ body{
   border : 1px solid #000000;
   overflow: hidden;
 }
+.info{
+  background-color:#d68f24;
+}
+.info:hover{
+  background-color:#308e15;
+}
